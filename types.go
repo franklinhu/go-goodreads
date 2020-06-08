@@ -10,6 +10,10 @@ type AuthorResponse struct {
 	Author Author `xml:"author"`
 }
 
+type SearchResponse struct {
+	Results []Work `xml:"search>results>work"`
+}
+
 type User struct {
 	ID            string       `xml:"id"`
 	Name          string       `xml:"name"`
@@ -127,4 +131,18 @@ func (r Review) ReadAtShort() string {
 
 func (r Review) ReadAtRelative() string {
 	return relativeDate(r.ReadAt)
+}
+
+// `Work` is returned from search results and is an aggregate
+// over many books
+type Work struct {
+	ID                       string  `xml:"id"`
+	BooksCount               int     `xml:"books_count"`
+	RatingsCount             int     `xml:"ratings_count"`
+	TextReviewsCount         int     `xml:"text_reviews_count"`
+	OriginalPublicationYear  int     `xml:"original_publication_year"`
+	OriginalPublicationMonth int     `xml:"original_publication_month"`
+	OriginalPublicationDay   int     `xml:"original_publication_day"`
+	AverageRating            float32 `xml:"average_rating"`
+	BestBook                 Book    `xml:"best_book"`
 }

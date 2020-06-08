@@ -9,24 +9,30 @@ import (
 )
 
 const (
-	apiRoot        = "https://www.goodreads.com"
+	defaultApiRoot = "https://www.goodreads.com"
 	reviewListPath = "/review/list.xml"
 	authorShowPath = "/author/show.xml"
 	bookShowPath   = "/book/show.xml"
 	userShowPath   = "/user/show.xml"
+	searchPath     = "/search/index.xml"
 )
 
 type Client struct {
 	apiKey     string
 	httpClient *http.Client
+	rootUrl    string
 }
 
 func NewClient(apiKey string) *Client {
-	return &Client{apiKey: apiKey, httpClient: http.DefaultClient}
+	return NewClientWithHttpClient(apiKey, http.DefaultClient)
 }
 
 func NewClientWithHttpClient(apiKey string, httpClient *http.Client) *Client {
-	return &Client{apiKey: apiKey, httpClient: httpClient}
+	return NewClientWithHttpClientAndRootUrl(apiKey, httpClient, "")
+}
+
+func NewClientWithHttpClientAndRootUrl(apiKey string, httpClient *http.Client, rootUrl string) *Client {
+	return &Client{apiKey: apiKey, httpClient: httpClient, rootUrl: rootUrl}
 }
 
 func (c *Client) GetUser(id string, limit int) (*User, error) {
@@ -140,8 +146,26 @@ func (c *Client) ReviewsForShelf(user *User, shelf string) ([]Review, error) {
 	return reviews, nil
 }
 
+func (c *Client) Search(query string) ([]Work, error) {
+	params := toURLValues(map[string]string{
+		"key": c.apiKey,
+		"q":   query,
+	})
+
+	response := &SearchResponse{}
+	err := c.getData(searchPath, params, response)
+	if err != nil {
+		return []Work{}, err
+	}
+	return response.Results, nil
+}
+
 func (c *Client) getData(path string, params url.Values, i interface{}) error {
-	uri, err := url.Parse(fmt.Sprintf("%s%s", apiRoot, path))
+	rootUrl := c.rootUrl
+	if rootUrl == "" {
+		rootUrl = defaultApiRoot
+	}
+	uri, err := url.Parse(fmt.Sprintf("%s%s", rootUrl, path))
 	if err != nil {
 		return err
 	}
